@@ -30,6 +30,9 @@ Define SL_DEBUG _once_ before #including this file to enable debug code
 extern "C" {
 #endif
 
+#include <stdio.h>
+#include <stdlib.h>
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 // Macros
@@ -103,7 +106,39 @@ typedef i32 bool32;
     #endif
 #endif
 
+typedef struct read_file_result
+{
+    bool success;
+    char* contents;
+    size_t size;
+} read_file_result;
 
+read_file_result ReadEntireFile(char* Path, bool AsBinary)
+{
+    read_file_result Result = {0};
+
+    FILE *f = NULL;
+    if (AsBinary)
+        f = fopen(Path, "rb");
+    else 
+        f = fopen(Path, "r");
+
+    if (f)
+    {
+        fseek(f, 0, SEEK_END);
+        long fsize = ftell(f);
+        fseek(f, 0, SEEK_SET);  //same as rewind(f);
+
+        Result.contents = (char*) malloc(fsize + 1);
+        Result.size = fread(Result.contents, 1, fsize, f);
+        fclose(f);
+
+        Result.contents[fsize] = 0;
+        Result.success = true;
+    }
+
+    return Result;
+}
 
 #if defined(__cplusplus)
 }

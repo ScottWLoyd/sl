@@ -291,33 +291,6 @@
 	},
 	"buffers":
 	[
-		{
-			"file": "run_tests.bat",
-			"settings":
-			{
-				"buffer_size": 1258,
-				"encoding": "UTF-8",
-				"line_ending": "Windows"
-			}
-		},
-		{
-			"file": "src/sl.h",
-			"settings":
-			{
-				"buffer_size": 3209,
-				"encoding": "UTF-8",
-				"line_ending": "Windows"
-			}
-		},
-		{
-			"file": "tests/test.c",
-			"settings":
-			{
-				"buffer_size": 129,
-				"encoding": "UTF-8",
-				"line_ending": "Windows"
-			}
-		}
 	],
 	"build_system": "",
 	"build_system_choices":
@@ -408,7 +381,7 @@
 	},
 	"expanded_folders":
 	[
-		"/C/Users/sloyd3/Documents/src/sl"
+		"/C/Users/sloyd3/Documents/src/c_test/opengl/ogl/playground"
 	],
 	"file_history":
 	[
@@ -490,97 +463,8 @@
 	"groups":
 	[
 		{
-			"selected": 1,
 			"sheets":
 			[
-				{
-					"buffer": 0,
-					"file": "run_tests.bat",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 1258,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								1201,
-								1201
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/Batch File/Batch File.sublime-syntax"
-						},
-						"translation.x": 0.0,
-						"translation.y": 126.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 2,
-					"type": "text"
-				},
-				{
-					"buffer": 1,
-					"file": "src/sl.h",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 3209,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								3209,
-								3209
-							]
-						],
-						"settings":
-						{
-							"rulers":
-							[
-								120
-							],
-							"syntax": "Packages/C++/C++.sublime-syntax"
-						},
-						"translation.x": 0.0,
-						"translation.y": 787.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 0,
-					"type": "text"
-				},
-				{
-					"buffer": 2,
-					"file": "tests/test.c",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 129,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								112,
-								112
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/C++/C.sublime-syntax"
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 1,
-					"type": "text"
-				}
 			]
 		}
 	],
@@ -628,7 +512,7 @@
 		"height": 100.0
 	},
 	"pinned_build_system": "Packages/User/run_tests_bat.sublime-build",
-	"project": "sl.sublime-project",
+	"project": "playground.sublime-project",
 	"replace":
 	{
 		"height": 42.0
