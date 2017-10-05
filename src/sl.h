@@ -325,7 +325,7 @@ Mul(mat4f M, vec4f V)
 
     return Result;
 }
-
+    
 inline mat4f
 TranslateMat4fByVec4f(mat4f M, vec4f V)
 {
@@ -347,6 +347,48 @@ TranslateMat4fByVec3f(mat4f M, vec3f V)
 	vec4f V4 = { V.X, V.Y, V.Z, 1.f };
 
 	Result = TranslateMat4fByVec4f(M, V4);
+
+    return Result;
+}
+
+inline mat4f
+MakeRotationMat4f(vec3f V)
+{
+    mat4f Result;
+
+    real32 A = cos(V.X);
+    real32 B = sin(V.X);
+    real32 C = cos(V.Y);
+    real32 D = sin(V.Y);
+    real32 E = cos(V.Z);
+    real32 F = sin(V.Z);
+
+    real32 AD = A * D;
+    real32 BD = B * D;
+
+    Result.E[0] = C * E;
+    Result.E[1] = -C * F;
+    Result.E[2] = D;
+    Result.E[4] = BD * E + A * F;
+    Result.E[5] = -BD * F + A * E;
+    Result.E[6] = -B * C;
+    Result.E[8] = -AD * E + B * F;
+    Result.E[9] = AD * F + B * E;
+    Result.E[10] = A * C;
+
+    Result.E[3] = Result.E[7] = Result.E[11] = Result.E[12] = Result.E[13] = Result.E[14] = 0.f;
+    Result.E[15] = 1.f;
+
+    return Result;
+}
+
+inline mat4f
+RotateMat4fByVec3f(mat4f M, vec3f V)
+{
+    mat4f Result;
+
+    mat4f Rotation = MakeRotationMat4f(V);
+    Result = MulMat4f(Rotation, M);
 
     return Result;
 }
