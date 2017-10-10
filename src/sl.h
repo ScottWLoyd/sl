@@ -32,6 +32,7 @@ extern "C" {
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -60,6 +61,8 @@ extern "C" {
     #define SL_ARCH_32_BIT 1
     #endif
 #endif
+
+#define cast(TYPE) (TYPE)
 
 
 #define internal        static
@@ -138,6 +141,8 @@ typedef i32 bool32;
 #define SL_RADDEB (180.0/SL_PI)
 #define DegreesToRadians(X) ((X) * SL_DEGRAD)
 #define RadiansToDegrees(X) ((X) * SL_RADDEB)
+#define MetersToFeet(X) ((X) * 3.28084)
+#define FeetToMeters(X) ((X) * 0.3048)
 
 inline real32 
 Clamp(real32 Value, real32 Min, real32 Max)
@@ -192,7 +197,7 @@ read_file_result ReadEntireFile(char* Path, bool AsBinary)
         long fsize = ftell(f);
         fseek(f, 0, SEEK_SET);  //same as rewind(f);
 
-        Result.contents = (char*) malloc(fsize + 1);
+        Result.contents = cast(char*) malloc(fsize + 1);
         Result.size = fread(Result.contents, 1, fsize, f);
         fclose(f);
 
@@ -202,6 +207,17 @@ read_file_result ReadEntireFile(char* Path, bool AsBinary)
 
     return Result;
 }
+
+inline char* 
+CatStrings(char* A, char* B)
+{
+    int LenA = strlen(A);
+    int LenB = strlen(B);
+    char* Result = cast(char*)malloc(LenA + LenB + 1);
+    snprintf(Result, LenA + LenB + 1, "%s%s", A, B);
+    return Result;
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -233,7 +249,7 @@ inline char*
 Vec3fToString(vec3f V)
 {
     int Length = snprintf(0, 0, "%f, %f, %f", V.X, V.Y, V.Z);
-    char* Result = (char*)malloc(Length);
+    char* Result = cast(char*)malloc(Length);
     
     snprintf(Result, Length, "%f, %f, %f", V.X, V.Y, V.Z);
 
@@ -382,6 +398,8 @@ MakeRotationMat4f(vec3f V)
     return Result;
 }
 
+#if 0
+// TODO: implement this
 inline mat4f
 RotateMat4fByVec3f(mat4f M, vec3f V)
 {
@@ -392,6 +410,7 @@ RotateMat4fByVec3f(mat4f M, vec3f V)
 
     return Result;
 }
+#endif
 
 inline char*
 Vec4fToString(vec4f V)
