@@ -181,7 +181,7 @@ typedef struct read_file_result
     size_t size;
 } read_file_result;
 
-read_file_result ReadEntireFile(char* Path, bool AsBinary)
+read_file_result ReadEntireFile(char* Path, bool AsBinary = false)
 {
     read_file_result Result = {0};
 
@@ -201,7 +201,7 @@ read_file_result ReadEntireFile(char* Path, bool AsBinary)
         Result.size = fread(Result.contents, 1, fsize, f);
         fclose(f);
 
-        Result.contents[Result.size] = 0;
+        Result.contents[Result.size] = EOF;
         Result.success = true;
     }
 
@@ -216,6 +216,200 @@ CatStrings(char* A, char* B)
     char* Result = cast(char*)malloc(LenA + LenB + 1);
     snprintf(Result, LenA + LenB + 1, "%s%s", A, B);
     return Result;
+}
+
+inline void
+StringCopy(char* Dest, char* Src, i32 Count)
+{
+    for (; Count > 0; Count--)
+    {
+        *Dest++ = *Src++;
+    }
+    *Dest = 0;
+}
+
+inline int
+is_alpha(char c)
+{
+    return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
+}
+
+inline int
+is_num(char c)
+{
+    return (c >= '0' && c <= '9');
+}
+
+inline int
+is_alnum(char c)
+{
+    return is_alpha(c) || is_num(c);
+}
+
+
+inline int
+is_space(char c)
+{
+    return (c == ' ' || c == '\t' || c == '\r' || c == '\n');
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// INI File Parser
+//
+
+typedef void (*sl_ini_handler)(char* Section, char* Param, char* Value, void* UserData);
+
+internal char*
+sl_get_line(char* s)
+{
+    static char* Start;
+    char* End;
+
+    if (s)
+    {
+        Start = s;
+    }
+    else if (Start)
+    {
+        s = Start;
+    } 
+    else
+    {
+        return 0;
+    }
+
+    while(*s != EOF && *s != '\n')
+    {
+        s++;
+    }
+
+    End = s;
+
+    i32 len = End - Start;
+    char* Result = cast(char*)malloc(len + 1);
+    StringCopy(Result, Start, len);
+
+    if (*s == EOF)
+    {
+        Start = 0;
+        Result[len-1] = EOF;
+    }
+    else
+    {
+        Start = End + 1; // skip the newline
+    }
+
+    return Result;
+}
+
+internal char*
+sl_find_next_char(char* s, char c)
+{
+    while(s && *s && *s != c)
+        s++;
+    if (*s == c)
+        return s;
+    return 0;
+}
+
+internal void
+sl_trim_whitespace(char* s)
+{
+    i32 len = strlen(s);
+    while (len && is_space(s[len-1]))
+        s[--len] = 0;
+}
+
+i32
+ParseIniFile(char* FilePath, sl_ini_handler Handler, void* UserData)
+{
+    i32 LineNumber;
+
+    read_file_result ReadFile = ReadEntireFile(FilePath);
+
+    if (!ReadFile.success)
+    {
+        return -1;
+    }
+
+    char Section[256];
+    char Key[256];
+    char Value[256];
+
+    Section[0] = 0;
+
+    char* line = sl_get_line(ReadFile.contents);
+    LineNumber = 0;
+    do {
+        char* str = line;
+
+        if (!str)
+        {
+            break;
+        }
+        else if (strlen(str) == 0)
+        {
+            // empty line
+            continue;
+        }
+
+        if (str[0] == '[')
+        {
+            char* Start = ++str;
+            char* End = sl_find_next_char(str, ']');
+            i32 len = End - Start;
+            StringCopy(Section, Start, len);
+        }
+        else
+        {
+            // skip any leading whitespace
+            while (is_space(*str)) 
+                str++;
+
+            // skip comment lines
+            if (*str == ';' || *str == '#')
+            {
+                free(line);
+                LineNumber++;
+                continue;
+            }
+
+            char* Start = str;
+            char* End = sl_find_next_char(str, '=');
+
+			if (Start == End)
+			{
+				// Empty line
+				free(line);
+				LineNumber++;
+				continue;
+			}
+
+            StringCopy(Key, Start, End - Start);
+            sl_trim_whitespace(Key);
+
+            str = ++End;
+            while (is_space(*str))
+                str++;
+
+            Start = str;
+            // find the end of the line and ignore any trailing comments
+            while (*str && *str != ';' && *str != '#')
+                str++;
+
+            End = str;
+            StringCopy(Value, Start, End - Start);
+            sl_trim_whitespace(Value);
+
+            Handler(Section, Key, Value, UserData);
+        }
+
+        free(line);
+        LineNumber++;
+    } while ((line = sl_get_line(0)));
+
+    return 0;
 }
 
 
