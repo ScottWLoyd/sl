@@ -308,7 +308,7 @@ sl_find_next_char(char* s, char c)
 {
     while(s && *s && *s != c)
         s++;
-    if (*s == c)
+    if (!*s || *s == c)
         return s;
     return 0;
 }
@@ -438,6 +438,46 @@ typedef struct vec3f
     };
     real32 E[3];
 } vec3f;
+
+inline vec3f
+ParseVec3f(char* s)
+{
+    // Expected formats:
+    // { X, Y, Z }
+    // X, Y, Z
+    vec3f Result = {0};
+
+    while (is_space(*s))
+        s++;
+
+    if (*s == '{') 
+        s++;
+
+    while (is_space(*s))
+        s++;    
+
+    char* Start = s;
+    char* End = sl_find_next_char(s, ',');
+
+    char Value[64];
+    StringCopy(Value, Start, End - Start);
+    sl_trim_whitespace(Value);
+    Result.X = atof(Value);
+
+    Start = s = End + 1; // skip the comma
+    End = sl_find_next_char(Start, ',');
+    StringCopy(Value, Start, End - Start);
+    sl_trim_whitespace(Value);
+    Result.Y = atof(Value);
+
+    Start = s = End + 1; // skip the comma
+    End = sl_find_next_char(Start, '}');
+    StringCopy(Value, Start, End - Start);
+    sl_trim_whitespace(Value);
+    Result.Z = atof(Value);
+
+    return Result;
+}
 
 inline char*
 Vec3fToString(vec3f V)
