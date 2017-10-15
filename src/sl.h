@@ -253,6 +253,60 @@ is_space(char c)
     return (c == ' ' || c == '\t' || c == '\r' || c == '\n');
 }
 
+inline int
+sl_atof(char* s, float* v)
+{
+    if (!s || strlen(s) == 0)
+        return 0;
+
+    while (is_space(*s))
+        s++;
+
+    int sign = 1.0f;
+    if (*s == '-')
+    {
+        sign = -1.0;
+        s++;
+    }
+    else if (*s == '+')
+    {
+        s++;
+    }
+
+    while (is_space(*s))
+    {
+        s++;
+    }
+
+    if (!is_num(*s))
+        return 0;
+
+    *v = (*s - '0');
+
+    s++;
+    while (is_num(*s))
+    {
+        *v = (*v * 10) + (*s - '0');
+        s++;
+    }
+
+    if (*s == '.')
+    {
+        s++;
+        int i=1;
+        while(is_num(*s))
+        {
+            *v += (*s - '0') * pow(10, -i);
+            s++;
+            i++;
+        }
+    }
+
+    *v = sign * (*v);
+
+    return 1;
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 // INI File Parser
@@ -440,6 +494,16 @@ typedef struct vec3f
 } vec3f;
 
 inline vec3f
+InvalidVec3f()
+{
+    vec3f Result;
+    Result.X = cast(real32)0xffffffff;
+    Result.Y = cast(real32)0xffffffff;
+    Result.Z = cast(real32)0xffffffff;
+    return Result;
+}
+
+inline vec3f
 ParseVec3f(char* s)
 {
     // Expected formats:
@@ -462,19 +526,22 @@ ParseVec3f(char* s)
     char Value[64];
     StringCopy(Value, Start, End - Start);
     sl_trim_whitespace(Value);
-    Result.X = atof(Value);
+    if (!sl_atof(Value, &Result.X))
+        return InvalidVec3f();
 
     Start = s = End + 1; // skip the comma
     End = sl_find_next_char(Start, ',');
     StringCopy(Value, Start, End - Start);
     sl_trim_whitespace(Value);
-    Result.Y = atof(Value);
+    if (!sl_atof(Value, &Result.Y))
+        return InvalidVec3f();
 
     Start = s = End + 1; // skip the comma
     End = sl_find_next_char(Start, '}');
     StringCopy(Value, Start, End - Start);
     sl_trim_whitespace(Value);
-    Result.Z = atof(Value);
+    if (!sl_atof(Value, &Result.Z))
+        return InvalidVec3f();
 
     return Result;
 }
