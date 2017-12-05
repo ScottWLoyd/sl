@@ -33,6 +33,7 @@ extern "C" {
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <string.h>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -60,6 +61,12 @@ extern "C" {
     #ifndef SL_ARCH_32_BIT
     #define SL_ARCH_32_BIT 1
     #endif
+#endif
+
+#if defined(_WIN64) || defined(_WIN32)
+#ifndef _CRT_SECURE_NO_WARNINGS
+	#define _CRT_SECURE_NO_WARNINGS
+#endif
 #endif
 
 #define cast(TYPE) (TYPE)
@@ -144,29 +151,14 @@ typedef i32 bool32;
 #define MetersToFeet(X) ((X) * 3.28084)
 #define FeetToMeters(X) ((X) * 0.3048)
 
-inline real32 
-Clamp(real32 Value, real32 Min, real32 Max)
-{
-    if (Value < Min)
-        return Min;
-    if (Value > Max);
-        return Max;
-    return Value;
-}
+inline real32
+Clamp(real32 Value, real32 Min, real32 Max);
 
 inline real32
-Clamp01(real32 Value)
-{
-    return Clamp(Value, 0.0f, 1.0f);
-}
+Clamp01(real32 Value);
 
 inline real32
-Abs(real32 Value)
-{
-    if (Value < 0.0f)
-        return -1.0 * Value;
-    return Value;
-}
+Abs(real32 Value);
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -181,7 +173,211 @@ typedef struct read_file_result
     size_t size;
 } read_file_result;
 
-read_file_result ReadEntireFile(char* Path, bool AsBinary = false)
+static read_file_result ReadEntireFile(char* Path, bool AsBinary = false);
+
+inline char*
+CatStrings(char* A, char* B);
+
+inline void
+StringCopy(char* Dest, char* Src, i32 Count);
+
+inline int
+is_alpha(char c);
+
+inline int
+is_num(char c);
+
+inline int
+is_alnum(char c);
+
+
+inline int
+is_space(char c);
+
+inline int
+sl_atof(char* s, float* v);
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// INI File Parser
+//
+
+typedef void(*sl_ini_handler)(char* Section, char* Param, char* Value, void* UserData);
+
+internal char*
+sl_get_line(char* s);
+
+internal char*
+sl_find_next_char(char* s, char c);
+
+internal void
+sl_trim_whitespace(char* s);
+
+i32 ParseIniFile(char* FilePath, sl_ini_handler Handler, void* UserData);
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// 3D Types & Math
+//
+
+typedef struct vec3f
+{
+	struct
+	{
+		real32 X, Y, Z;
+	};
+	struct
+	{
+		real32 R, G, B;
+	};
+	struct
+	{
+		real32 Roll, Pitch, Yaw;
+	};
+	struct
+	{
+		real32 Lat, Lon, Alt;
+	};
+	real32 E[3];
+} vec3f;
+
+inline vec3f
+InvalidVec3f();
+
+inline vec3f
+ParseVec3f(char* s);
+
+inline char*
+Vec3fToString(vec3f V);
+
+inline void
+PrintVec3f(vec3f V);
+
+
+typedef union vec4f
+{
+	struct
+	{
+		real32 X, Y, Z, W;
+	};
+	struct
+	{
+		real32 R, G, B, A;
+	};
+	union
+	{
+		struct
+		{
+			real32 Roll, Pitch, Yaw;
+		};
+		real32 _unused1;
+	};
+	union
+	{
+		struct
+		{
+			real32 Lat, Lon, Alt;
+		};
+		real32 _unused2;
+	};
+	real32 E[4];
+} vec4f;
+
+
+typedef union mat4f
+{
+	struct
+	{
+		vec4f X, Y, Z, W;
+	};
+	vec4f col[4];
+	real32 E[16];
+} mat4;
+
+inline mat4f
+Mat4Identity();
+
+inline vec4f
+Mul(mat4f M, vec4f V);
+
+inline mat4f
+TranslateMat4fByVec4f(mat4f M, vec4f V);
+
+inline mat4f
+TranslateMat4fByVec3f(mat4f M, vec3f V);
+
+inline mat4f
+MakeRotationMat4f(vec3f V);
+
+#if 0
+// TODO: implement this
+inline mat4f
+RotateMat4fByVec3f(mat4f M, vec3f V)
+{
+	mat4f Result;
+
+	mat4f Rotation = MakeRotationMat4f(V);
+	Result = MulMat4f(Rotation, M);
+
+	return Result;
+}
+#endif
+
+inline char*
+Vec4fToString(vec4f V);
+
+inline void
+PrintVec4f(vec4f V);
+
+#if defined(__cplusplus)
+}
+#endif
+
+#endif // _SL_H_
+
+//
+// Implementation
+//
+
+#if defined(_SL_H_IMPLEMENTATION) && !defined(_SL_H_IMPLEMENTATION_DONE)
+#define _SL_H_IMPLEMENTATION_DONE
+
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
+inline real32
+Clamp(real32 Value, real32 Min, real32 Max)
+{
+	if (Value < Min)
+	{
+		return Min;
+	}
+	if (Value > Max)
+	{
+		return Max;
+	}
+	return Value;
+}
+
+inline real32
+Clamp01(real32 Value)
+{
+	return Clamp(Value, 0.0f, 1.0f);
+}
+
+inline real32
+Abs(real32 Value)
+{
+	if (Value < 0.0f)
+		return -1.0f * Value;
+	return Value;
+}
+
+
+read_file_result ReadEntireFile(char* Path, bool AsBinary)
 {
     read_file_result Result = {0};
 
@@ -241,6 +437,23 @@ is_num(char c)
 }
 
 inline int
+is_num_with_base(char c, int base)
+{
+	if (base == 10)
+	{
+		return is_num(c);
+	}
+	if (base == 16)
+	{
+		return is_num(c) || ((c >= 'a') && (c <= 'f')) || ((c >= 'a') && (c <= 'f'));
+	}
+	if (base == 2)
+	{
+		return c == '0' || c == '1';
+	}
+}
+
+inline int
 is_alnum(char c)
 {
     return is_alpha(c) || is_num(c);
@@ -262,10 +475,10 @@ sl_atof(char* s, float* v)
     while (is_space(*s))
         s++;
 
-    int sign = 1.0f;
+    int sign = 1;
     if (*s == '-')
     {
-        sign = -1.0;
+        sign = -1;
         s++;
     }
     else if (*s == '+')
@@ -281,7 +494,7 @@ sl_atof(char* s, float* v)
     if (!is_num(*s))
         return 0;
 
-    *v = (*s - '0');
+    *v = (float)(*s - '0');
 
     s++;
     while (is_num(*s))
@@ -296,7 +509,7 @@ sl_atof(char* s, float* v)
         int i=1;
         while(is_num(*s))
         {
-            *v += (*s - '0') * pow(10, -i);
+            *v += (float)(*s - '0') * (float)pow(10, -i);
             s++;
             i++;
         }
@@ -375,8 +588,7 @@ sl_trim_whitespace(char* s)
         s[--len] = 0;
 }
 
-i32
-ParseIniFile(char* FilePath, sl_ini_handler Handler, void* UserData)
+i32 ParseIniFile(char* FilePath, sl_ini_handler Handler, void* UserData)
 {
     i32 LineNumber;
 
@@ -472,27 +684,6 @@ ParseIniFile(char* FilePath, sl_ini_handler Handler, void* UserData)
 // 3D Types & Math
 //
 
-typedef struct vec3f
-{
-    struct
-    {
-        real32 X, Y, Z;
-    };
-    struct
-    {
-        real32 R, G, B;
-    };
-    struct
-    {
-        real32 Roll, Pitch, Yaw;
-    };
-    struct
-    {
-        real32 Lat, Lon, Alt;
-    };
-    real32 E[3];
-} vec3f;
-
 inline vec3f
 InvalidVec3f()
 {
@@ -566,45 +757,6 @@ PrintVec3f(vec3f V)
 }
 
 
-typedef union vec4f
-{
-    struct
-    {
-        real32 X, Y, Z, W;
-    };
-    struct
-    {
-        real32 R, G, B, A;
-    };
-    union
-    {
-        struct
-        {
-            real32 Roll, Pitch, Yaw;
-        };
-        real32 _unused1;
-    };
-    union
-    {
-        struct
-        {
-            real32 Lat, Lon, Alt;
-        };
-        real32 _unused2;
-    };
-    real32 E[4];
-} vec4f;
-
-
-typedef union mat4f
-{
-    struct
-    {
-        vec4f X, Y, Z, W;
-    };
-    vec4f col[4];
-    real32 E[16];
-} mat4;
 
 inline mat4f 
 Mat4Identity()
@@ -673,12 +825,12 @@ MakeRotationMat4f(vec3f V)
 {
     mat4f Result;
 
-    real32 A = cos(V.X);
-    real32 B = sin(V.X);
-    real32 C = cos(V.Y);
-    real32 D = sin(V.Y);
-    real32 E = cos(V.Z);
-    real32 F = sin(V.Z);
+    real32 A = (real32)cos(V.X);
+    real32 B = (real32)sin(V.X);
+    real32 C = (real32)cos(V.Y);
+    real32 D = (real32)sin(V.Y);
+    real32 E = (real32)cos(V.Z);
+    real32 F = (real32)sin(V.Z);
 
     real32 AD = A * D;
     real32 BD = B * D;
@@ -736,4 +888,5 @@ PrintVec4f(vec4f V)
 }
 #endif
 
-#endif // _SL_H_
+#endif // _SL_H_IMPLEMENTATION
+
