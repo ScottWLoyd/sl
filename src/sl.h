@@ -41,9 +41,9 @@ extern "C" {
 //
 
 #ifdef SL_DEBUG
-#define sl_assert(condition) if (!condition) { *(int*)0 = 0; }
+#define sl_assert(condition) if (!(condition)) { fprintf(stderr, "%s(%d): Assertion failed.", __FILE__, __LINE__); *(int*)0 = 0; }
 #else
-#define sl_assert(condigion)
+#define sl_assert(condition)
 #endif
 
 #ifndef SL_STATIC_ASSERT
@@ -151,13 +151,13 @@ typedef i32 bool32;
 #define MetersToFeet(X) ((X) * 3.28084)
 #define FeetToMeters(X) ((X) * 0.3048)
 
-inline real32
+real32
 Clamp(real32 Value, real32 Min, real32 Max);
 
-inline real32
+real32
 Clamp01(real32 Value);
 
-inline real32
+real32
 Abs(real32 Value);
 
 
@@ -175,26 +175,26 @@ typedef struct read_file_result
 
 static read_file_result ReadEntireFile(char* Path, bool AsBinary = false);
 
-inline char*
+char*
 CatStrings(char* A, char* B);
 
-inline void
+void
 StringCopy(char* Dest, char* Src, i32 Count);
 
-inline int
+int
 is_alpha(char c);
 
-inline int
+int
 is_num(char c);
 
-inline int
+int
 is_alnum(char c);
 
 
-inline int
+int
 is_space(char c);
 
-inline int
+int
 sl_atof(char* s, float* v);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -204,22 +204,59 @@ sl_atof(char* s, float* v);
 
 typedef void(*sl_ini_handler)(char* Section, char* Param, char* Value, void* UserData);
 
-internal char*
-sl_get_line(char* s);
-
-internal char*
-sl_find_next_char(char* s, char c);
-
-internal void
-sl_trim_whitespace(char* s);
-
 i32 ParseIniFile(char* FilePath, sl_ini_handler Handler, void* UserData);
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
-// 3D Types & Math
+// Spacial Types & Math
 //
+
+typedef struct vec2f
+{
+    struct
+    {
+        real32 X, Y;
+    };
+    struct
+    {
+        real32 W, H;
+    };
+    real32 E[2];
+} vec2f;
+
+vec2f Vec2f(real32 X, real32 Y);
+
+vec2f
+InvalidVec2f();
+
+vec2f
+ParseVec2f(char* s);
+
+char*
+Vec2fToString(vec2f V);
+
+void
+PrintVec2f(vec2f V);
+
+vec2f AddVec2f(vec2f A, vec2f B);
+vec2f SubVec2f(vec2f A, vec2f B);
+vec2f ScaleVec2f(real32 A, vec2f B);
+vec2f HadamardVec2f(vec2f A, vec2f B);
+real32 InnerVec2f(vec2f A, vec2f B);
+vec2f PerpVec2f(vec2f A);
+
+#if defined(__cplusplus)
+}
+#endif
+vec2f operator+(const vec2f& A, const vec2f& B);
+vec2f operator-(const vec2f& A, const vec2f& B);
+real32 operator*(const vec2f& A, const vec2f& B);
+vec2f operator*(const real32& A, const vec2f& B);
+bool operator==(const vec2f& A, const vec2f& B);
+#if defined(__cplusplus)
+extern "C" {
+#endif
 
 typedef struct vec3f
 {
@@ -242,16 +279,16 @@ typedef struct vec3f
 	real32 E[3];
 } vec3f;
 
-inline vec3f
+vec3f
 InvalidVec3f();
 
-inline vec3f
+vec3f
 ParseVec3f(char* s);
 
-inline char*
+char*
 Vec3fToString(vec3f V);
 
-inline void
+void
 PrintVec3f(vec3f V);
 
 
@@ -295,24 +332,24 @@ typedef union mat4f
 	real32 E[16];
 } mat4;
 
-inline mat4f
+mat4f
 Mat4Identity();
 
-inline vec4f
+vec4f
 Mul(mat4f M, vec4f V);
 
-inline mat4f
+mat4f
 TranslateMat4fByVec4f(mat4f M, vec4f V);
 
-inline mat4f
+mat4f
 TranslateMat4fByVec3f(mat4f M, vec3f V);
 
-inline mat4f
+mat4f
 MakeRotationMat4f(vec3f V);
 
 #if 0
 // TODO: implement this
-inline mat4f
+mat4f
 RotateMat4fByVec3f(mat4f M, vec3f V)
 {
 	mat4f Result;
@@ -324,10 +361,10 @@ RotateMat4fByVec3f(mat4f M, vec3f V)
 }
 #endif
 
-inline char*
+char*
 Vec4fToString(vec4f V);
 
-inline void
+void
 PrintVec4f(vec4f V);
 
 #if defined(__cplusplus)
@@ -348,7 +385,7 @@ PrintVec4f(vec4f V);
 extern "C" {
 #endif
 
-inline real32
+real32
 Clamp(real32 Value, real32 Min, real32 Max)
 {
 	if (Value < Min)
@@ -362,13 +399,13 @@ Clamp(real32 Value, real32 Min, real32 Max)
 	return Value;
 }
 
-inline real32
+real32
 Clamp01(real32 Value)
 {
 	return Clamp(Value, 0.0f, 1.0f);
 }
 
-inline real32
+real32
 Abs(real32 Value)
 {
 	if (Value < 0.0f)
@@ -393,18 +430,19 @@ read_file_result ReadEntireFile(char* Path, bool AsBinary)
         long fsize = ftell(f);
         fseek(f, 0, SEEK_SET);  //same as rewind(f);
 
-        Result.contents = cast(char*) malloc(fsize + 1);
+        Result.contents = cast(char*) malloc(fsize + 2);
         Result.size = fread(Result.contents, 1, fsize, f);
         fclose(f);
 
-        Result.contents[Result.size] = EOF;
+		Result.contents[Result.size] = 0;
+        Result.contents[Result.size + 1] = EOF;
         Result.success = true;
     }
 
     return Result;
 }
 
-inline char* 
+char* 
 CatStrings(char* A, char* B)
 {
     int LenA = strlen(A);
@@ -414,7 +452,7 @@ CatStrings(char* A, char* B)
     return Result;
 }
 
-inline void
+void
 StringCopy(char* Dest, char* Src, i32 Count)
 {
     for (; Count > 0; Count--)
@@ -424,19 +462,19 @@ StringCopy(char* Dest, char* Src, i32 Count)
     *Dest = 0;
 }
 
-inline int
+int
 is_alpha(char c)
 {
     return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
 }
 
-inline int
+int
 is_num(char c)
 {
     return (c >= '0' && c <= '9');
 }
 
-inline int
+int
 is_num_with_base(char c, int base)
 {
 	if (base == 10)
@@ -451,22 +489,23 @@ is_num_with_base(char c, int base)
 	{
 		return c == '0' || c == '1';
 	}
+	return 0;
 }
 
-inline int
+int
 is_alnum(char c)
 {
     return is_alpha(c) || is_num(c);
 }
 
 
-inline int
+int
 is_space(char c)
 {
     return (c == ' ' || c == '\t' || c == '\r' || c == '\n');
 }
 
-inline int
+int
 sl_atof(char* s, float* v)
 {
     if (!s || strlen(s) == 0)
@@ -681,10 +720,156 @@ i32 ParseIniFile(char* FilePath, sl_ini_handler Handler, void* UserData)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
-// 3D Types & Math
+// Spacial Types & Math
 //
 
-inline vec3f
+
+//
+// Vec2f
+//
+
+vec2f
+Vec2f(real32 X, real32 Y)
+{
+    vec2f Result;
+    Result.X = X;
+    Result.Y = Y;
+    return Result;
+}
+
+vec2f
+InvalidVec2f()
+{
+    vec2f Result;
+    Result.X = cast(real32)0xffffffff;
+    Result.Y = cast(real32)0xffffffff;
+    return Result;
+}
+
+vec2f
+ParseVec2f(char* s)
+{
+    // Expected formats:
+    // { X, Y }
+    // X, Y
+    vec2f Result = {0};
+
+    while (is_space(*s))
+        s++;
+
+    if (*s == '{') 
+        s++;
+
+    while (is_space(*s))
+        s++;    
+
+    char* Start = s;
+    char* End = sl_find_next_char(s, ',');
+
+    char Value[64];
+    StringCopy(Value, Start, End - Start);
+    sl_trim_whitespace(Value);
+    if (!sl_atof(Value, &Result.X))
+        return InvalidVec2f();
+
+    Start = s = End + 1; // skip the comma
+    End = sl_find_next_char(Start, '}');
+    StringCopy(Value, Start, End - Start);
+    sl_trim_whitespace(Value);
+    if (!sl_atof(Value, &Result.Y))
+        return InvalidVec2f();
+
+    return Result;
+}
+
+char*
+Vec2fToString(vec2f V)
+{
+    int Length = snprintf(0, 0, "%f, %f", V.X, V.Y);
+    char* Result = cast(char*)malloc(Length);
+    
+    snprintf(Result, Length, "%f, %f", V.X, V.Y);
+
+    return Result;
+}
+
+void
+PrintVec2f(vec2f V)
+{
+    char* FormattedString = Vec2fToString(V);
+    printf("{ %s }", FormattedString);
+    free(FormattedString);
+}
+
+vec2f AddVec2f(vec2f A, vec2f B)
+{
+    vec2f Result;
+    Result.X = A.X + B.X;
+    Result.Y = A.Y + B.Y;
+    return Result;
+}
+
+vec2f SubVec2f(vec2f A, vec2f B)
+{
+    vec2f Result;
+    Result.X = A.X - B.X;
+    Result.Y = A.Y - B.Y;
+    return Result;
+}
+
+vec2f HadamardVec2f(vec2f A, vec2f B)
+{
+    vec2f Result;
+    Result.X = A.X * B.X;
+    Result.Y = A.Y * B.Y;
+    return Result;
+}
+
+real32 InnerVec2f(vec2f A, vec2f B)
+{
+    real32 Result;
+    Result = A.X * B.X + A.Y + B.Y;
+    return Result;
+}
+
+vec2f ScaleVec2f(real32 A, vec2f B)
+{
+    vec2f Result;
+    Result.X = A * B.X;
+    Result.Y = A * B.Y;
+    return Result;
+}
+
+vec2f PerpVec2f(vec2f A)
+{
+    vec2f Result;
+    Result.X = -A.Y;
+    Result.Y = A.X;
+    return Result;
+}
+
+int EqualsVec2f(vec2f A, vec2f B)
+{
+    return (A.X == B.X) && (A.Y == B.Y);
+}
+
+#if defined(__cplusplus)
+}
+#endif
+vec2f operator+(const vec2f& A, const vec2f& B) { return AddVec2f(A, B); }
+vec2f operator-(const vec2f& A, const vec2f& B) { return SubVec2f(A, B); }
+real32 operator*(const vec2f& A, const vec2f& B) { return InnerVec2f(A, B); }
+vec2f operator*(const real32& A, const vec2f& B) { return ScaleVec2f(A, B); }
+bool operator==(const vec2f& A, const vec2f& B) { return cast(bool)EqualsVec2f(A, B); }
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
+//
+// Vec3f
+//
+
+vec3f
 InvalidVec3f()
 {
     vec3f Result;
@@ -694,7 +879,7 @@ InvalidVec3f()
     return Result;
 }
 
-inline vec3f
+vec3f
 ParseVec3f(char* s)
 {
     // Expected formats:
@@ -737,7 +922,7 @@ ParseVec3f(char* s)
     return Result;
 }
 
-inline char*
+char*
 Vec3fToString(vec3f V)
 {
     int Length = snprintf(0, 0, "%f, %f, %f", V.X, V.Y, V.Z);
@@ -748,7 +933,7 @@ Vec3fToString(vec3f V)
     return Result;
 }
 
-inline void
+void
 PrintVec3f(vec3f V)
 {
     char* FormattedString = Vec3fToString(V);
@@ -758,7 +943,7 @@ PrintVec3f(vec3f V)
 
 
 
-inline mat4f 
+mat4f 
 Mat4Identity()
 {
     mat4 Result;
@@ -771,7 +956,7 @@ Mat4Identity()
     return Result;
 }
 
-inline vec4f
+vec4f
 Mul(mat4f M, vec4f V)
 {
     vec4f Result = {0};
@@ -795,7 +980,7 @@ Mul(mat4f M, vec4f V)
     return Result;
 }
     
-inline mat4f
+mat4f
 TranslateMat4fByVec4f(mat4f M, vec4f V)
 {
 	mat4f Result = M;
@@ -808,7 +993,7 @@ TranslateMat4fByVec4f(mat4f M, vec4f V)
 	return Result;
 }
 
-inline mat4f
+mat4f
 TranslateMat4fByVec3f(mat4f M, vec3f V)
 {
     mat4f Result = M;
@@ -820,7 +1005,7 @@ TranslateMat4fByVec3f(mat4f M, vec3f V)
     return Result;
 }
 
-inline mat4f
+mat4f
 MakeRotationMat4f(vec3f V)
 {
     mat4f Result;
@@ -853,7 +1038,7 @@ MakeRotationMat4f(vec3f V)
 
 #if 0
 // TODO: implement this
-inline mat4f
+mat4f
 RotateMat4fByVec3f(mat4f M, vec3f V)
 {
     mat4f Result;
@@ -865,7 +1050,7 @@ RotateMat4fByVec3f(mat4f M, vec3f V)
 }
 #endif
 
-inline char*
+char*
 Vec4fToString(vec4f V)
 {
     int Length = snprintf(0, 0, "%f, %f, %f, %f", V.X, V.Y, V.Z, V.W);
@@ -876,7 +1061,7 @@ Vec4fToString(vec4f V)
     return Result;
 }
 
-inline void
+void
 PrintVec4f(vec4f V)
 {
     char* FormattedString = Vec4fToString(V);
