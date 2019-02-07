@@ -367,6 +367,42 @@ Vec4fToString(vec4f V);
 void
 PrintVec4f(vec4f V);
 
+//--------------------------------------------------------------
+
+typedef union quat
+{
+    struct
+    {
+        real32 x, y, z, w;
+    }
+    struct
+    {
+        vec3f v;
+        real32 _w;
+    };
+    real32 E[4];
+} quat;
+
+quat AddQuat(quat A, quat B);
+real32 NormQuat(quat A);
+quat NozQuat(quat A);
+quat MulQuat(quat A, quat B);
+quat InvQuat(quat A);
+quat ConjQuat(quat A);
+bool EqualsQuat(quat A, quat B);
+
+#if defined(__cplusplus)
+}
+#endif
+quat operator+(const quat& A, const quat& B);
+quat operator*(const quat& A, const quat& B);
+bool operator==(const vec2f& A, const vec2f& B);
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
+//--------------------------------------------------------------
+
 #if defined(__cplusplus)
 }
 #endif
@@ -1068,6 +1104,46 @@ PrintVec4f(vec4f V)
     printf("{ %s }", FormattedString);
     free(FormattedString);
 }
+
+quat AddQuat(quat A, quat B)
+{
+    quat Result;
+    Result.x = A.x + A.x;
+    Result.y = A.y + B.y;
+    Result.z = A.z + B.z;
+    Result.w = A.w + B.w;
+
+    return Result;
+}
+
+real32 NormQuat(quat A)
+{
+    real32 Result;
+    Result = A.x*A.x + A.y*A.y + A.z*A.z + A.w+A.w;
+    return Result;
+}
+
+quat NozQuat(quat A)
+{
+    real32 Result;
+
+    return Result;
+}
+
+quat MulQuat(quat A, quat B);
+quat InvQuat(quat A);
+quat ConjQuat(quat A);
+bool EqualsQuat(quat A, quat B);
+
+#if defined(__cplusplus)
+}
+#endif
+quat operator+(const quat& A, const quat& B);
+quat operator*(const quat& A, const quat& B);
+bool operator==(const vec2f& A, const vec2f& B);
+#if defined(__cplusplus)
+extern "C" {
+#endif
 
 #if defined(__cplusplus)
 }
