@@ -1,36 +1,55 @@
 @ECHO off
 
 SET arch=x64
-SET glfw_dir=c:\users\sloyd3\documents\src\external\glfw-3.2.1\src
-SET glew_dir=c:\users\sloyd3\documents\src\external\glew-2.1.0
-
-SET glfw_build_dir=glfw_build
-
 IF NOT DEFINED VisualStudioVersion (
 	IF EXIST "c:\program files (x86)\Microsoft Visual Studio\2017" (
-		PUSHD "c:\program files (x86)\Microsoft Visual Studio\2017"
-		PWD
+		PUSHD "c:\program files (x86)\Microsoft Visual Studio\2017"		
 		IF EXIST ".\Community" (
 			PUSHD ".\Community" 
-			PWD
+			CALL ".\VC\Auxiliary\Build\vcvarsall.bat" %arch%
+			POPD
 		) ELSE (
 			IF EXIST  ".\Professional" (
 				PUSHD ".\Professional"
-				PWD
+				CALL ".\VC\Auxiliary\Build\vcvarsall.bat" %arch%
+				POPD
 			) ELSE (
 				ECHO Cannot Determine Visual Studio Version;
 				POPD
 				EXIT 1				
 			)
 		)
+		POPD
 	) ELSE (
 		ECHO Cannot Determine Visual Studio Version; 
 		EXIT 1
-	)
-	PWD
-	CALL ".\VC\Auxiliary\Build\vcvarsall.bat" %arch%
-	POPD
+	)	
 )
+
+
+IF [%1]==[] (
+    GOTO :build_sdl
+) ELSE (
+	IF [%1]=="glfw" (
+		GOTO :build_glfw
+	) ELSE (
+		@ECHO Unrecognized target
+        @ECHO Usage: %0 ^<TARGET^>
+		EXIT /B 1
+	)
+)
+
+
+REM ***********************************************************************
+REM GLFW
+REM ***********************************************************************
+
+
+:build_glfw
+SET glfw_dir=c:\users\sloyd3\documents\src\external\glfw-3.2.1\src
+SET glew_dir=c:\users\sloyd3\documents\src\external\glew-2.1.0
+
+SET glfw_build_dir=glfw_build
 
 IF NOT EXIST %glfw_build_dir% (
 	MKDIR %glfw_build_dir%\include\GLFW
@@ -80,4 +99,33 @@ LIB /out:glfw3.lib *.obj
 CP glfw3.lib ..
 POPD
 
+POPD
+
+GOTO :eof
+
+REM ***********************************************************************
+REM SDL
+REM ***********************************************************************
+
+
+:build_sdl
+
+SET sdl_build_dir=build_sdl
+
+IF NOT EXIST %sdl_build_dir% (
+	MKDIR %sdl_build_dir%
+	ICACLS %sdl_build_dir% /T /C /grant:r Everyone:F
+)
+
+PUSHD %sdl_build_dir%
+hg clone http://hg.libsdl.org/SDL
+
+mkdir build
+PUSHD build
+
+cmake -G "Visual Studio 15 2017 Win64" ..\\SDL
+msbuild -p:Configuration=Release SDL2-static.vcxproj
+
+
+POPD
 POPD
