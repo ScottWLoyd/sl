@@ -36,8 +36,8 @@
 void* _da_resize(void* ptr, size_t elem_size, size_t new_len);
 
 
-#define _da_init(__da_list, size) \
-    _da_resize(__da_list, sizeof(*__da_list), size)
+#define _da_init(__da_list, __size) \
+    _da_resize(__da_list, sizeof(*__da_list), __size)
 
 
 #define da_len(__da_list) \
@@ -48,19 +48,19 @@ void* _da_resize(void* ptr, size_t elem_size, size_t new_len);
     ((__da_list) ? (*(&_da_hdr(__da_list)+1)) : 0)
 
 
-#define da_append(__da_list, item) \
-    da_insert(__da_list, item, da_len(__da_list))    
+#define da_append(__da_list, __item) \
+    da_insert(__da_list, __item, da_len(__da_list))    
 
 
-#define da_push(__da_list, item) \
-    da_append(__da_list, item)
+#define da_push(__da_list, __item) \
+    da_append(__da_list, __item)
 
 
-#define da_insert(__da_list, item, index) \
+#define da_insert(__da_list, __item, __index) \
     if((__da_list)==NULL) (__da_list) = _da_init(__da_list, 16);     \
     else if (da_cap((__da_list)) == da_len((__da_list))) (__da_list) = _da_init((__da_list), da_cap((__da_list)) * 2);    \
-    memcpy((__da_list) + (index) + 1, (__da_list) + (index), sizeof(*(__da_list)) * (da_len((__da_list)) - (index)));  \
-    (__da_list)[index] = (item); \
+    memcpy((__da_list) + (__index) + 1, (__da_list) + (__index), sizeof(*(__da_list)) * (da_len((__da_list)) - (__index)));  \
+    (__da_list)[__index] = (__item); \
     _da_hdr((__da_list))++ // incrememnt len
 
 
@@ -69,16 +69,16 @@ void* _da_resize(void* ptr, size_t elem_size, size_t new_len);
 
 
 // NOTE(Scott): this is an ordered, slower remove
-#define da_remove(__da_list, index) \
-    assert(da_len((__da_list)) > index + 1); \
-    memcpy((__da_list) + (index), (__da_list) + (index) + 1, sizeof(*(__da_list)) * (da_len((__da_list)) - (index)));  \
+#define da_remove(__da_list, __index) \
+    assert(da_len((__da_list)) > __index + 1); \
+    memcpy((__da_list) + (__index), (__da_list) + (__index) + 1, sizeof(*(__da_list)) * (da_len((__da_list)) - (__index)));  \
     (_da_hdr((__da_list))--);
 
 
 // NOTE(Scott): this is an unordered, faster move
-#define da_remove_unordered(__da_list, index) \
-    assert(da_len((__da_list)) > index + 1);     \
-    (__da_list)[(index)] = (__da_list)[da_len((__da_list)) - 1], _da_hdr((__da_list))--
+#define da_remove_unordered(__da_list, __index) \
+    assert(da_len((__da_list)) > __index + 1);     \
+    (__da_list)[(__index)] = (__da_list)[da_len((__da_list)) - 1], _da_hdr((__da_list))--
 
 
 #define da_clear(__da_list) \
